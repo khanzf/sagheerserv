@@ -1,0 +1,5 @@
+Configuration File - help needed!
+Security
+
+When you type in HEAD for a file which does not exist, it returns the 404 PAGE.
+It should only return the error 404 header, not the full page too

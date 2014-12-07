@@ -1,0 +1,138 @@
+                               SagheerServ
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Brief Introduction
+~~~~~~~~~~~~~~~~~~
+
+SagheerServ is an implementation of the HTTP 1.1 protocol as specified in 
+RFC 2616, and RFC 2068  It is designed to eventually be a replacement for 
+the current standard Apache.  The word "sagheer" means "little" or "small" 
+in Arabic.
+
+SagheerServ is still a state of extreme development and under no 
+circumstances should it be used, especially in security-sensative systems.  
+There are still numerous security holes.  Ye have been warned!
+
+
+History
+~~~~~~~
+SagheerServ was written entirely by me, Farhan Khan, except with the MD5 
+section.  I wrote an original HTTP server during my junior year of high 
+school, but this code was merely my experimentation with the C language 
+and BSD sockets.
+
+During my sophomore year at Virginia Commonwealth University, after a wave 
+of exams, I sat in my dorm room and decided to waste time writing the 
+basic structure of SagheerServ.  During the next year, I worked on the 
+code periodically.
+
+A year later, I transferred to George Mason University and completely 
+forgot about the code for two years.  After finally graduating in the 
+summer of 2006, before finding my first job, I decided to use my free time 
+working on it again.  During this last stage, it has undergone the most 
+development.
+
+
+Goal
+~~~~
+The ultimate goal is to fully implement the HTTP 1.1 protocol, while 
+remaining simple to setup, configure and debug.
+
+
+Systems
+~~~~~~~
+Sagheer Serv was mostly written on Linux 2.4-2.6 kernels and FreeBSD 
+6.1-RELEASE, however, it SHOULD compile and run on any other Unix or 
+Unix-like system with the common C library set (libc).
+
+A windows port is eventually planned, but as of now, it has not been done.
+
+
+How to use
+~~~~~~~~~~
+Make sure you have gmake installed and type in 'make' to compile the code
+This will build you the binary `httpd`
+
+To configure, open httpd.conf with your favorite text editor and change 
+the values.
+
+The simplest way to run it is './httpd', but to keep your terminal, use 
+the '-b' flag.  
+
+
+Modules
+~~~~~~~
+SagheerServ is able to dynamically link modules (shared objects), which 
+are specified before initilization.  These modules insert code at 
+specified "entry-points" without the program, and are executed when 
+certain conditions are matched.
+
+Currently, the only two modules which written are CGI and UserPath, as 
+mod_cgi and mod_userpath, respectively.  
+
+Modules can be inserted by using the -m flag.  For example:
+'./httpd -m mod_cgi.so'
+
+
+Writing Modules
+~~~~~~~~~~~~~~~
+A blank skelaton module is in mod_blank.c.  The most important structure 
+is mod_info, located in modules.h.  Below is a copy of it
+
+struct mod_info {
+        char *name;
+        int (*phasefilltypes)(struct clientdata_h *, char *);
+        int (*phasesendreply)(struct clientdata_h *);
+        int (*phaseconvertpath) (struct clientdata_h *);
+        struct mod_info *next;
+};
+
+The first element is a pointer to a string containing the name of the 
+module.  The next three are function-pointers pointing at functions which 
+are to be executed a certain times during the the program.
+
+The first function is executed when the server is parsing a request-token.  
+The first argument to it will be the clientdata structure, and the second 
+will be the request-token line.
+
+The second is executed before the server sends its regular responses to 
+the client.  For example, if you request file1.html, your module has an 
+opportunity to prevent a simple reply with a header and the file contents.  
+Instead, it can send whatever it chooses.  This is useful for languages 
+such as PHP or CGI.
+
+The third is an opportunity for your server to intercept the requested 
+resource, and modify the path before the webserver sends a reply.  For 
+example, if clientdata->resource is /var/www/root/~username, you can have 
+it changed to /usr/home/username/public_html using this section of your 
+module.
+
+Each of these three functions must return one of four values: M_ERR, M_OK, 
+M_DECLINE, M_CONTINUE.
+
+M_ERR should be returned when the server when an internal error has 
+occured with the server.  Upon receiving this, the server will send an 
+Internal Server Error 500 code, will close the connection, and will exit.
+
+M_OK should be returned when module has successfully completed and no 
+other module of this kind should be executed.  This should be used 
+everytime in a sendreply function, except when your sendreply function 
+sends reply-headers, in which case it should reply with M_CONTINUE.
+
+M_DECLINE should be returned when a module does not currently have any 
+code to be executed.  For example, mod_cgi's code is only executed during 
+the sendreply section of its module.  The other functions return 
+M_DECLINE.
+
+M_CONTINUE should be returned when a module has successfully completed its 
+tasks, but other modules' functions of this kind should also be executed.
+
+The fourth argument is a pointer to the next module.  This MUST be NULL 
+unless you know what you're doing.
+
+The initialization function MUST be named moduleInit().  It is executed 
+when the server starts and loads the modules.  Its minimum requirement is 
+for your module to return a pointer to the mod_info structure.  However, 
+this function can also be used to initialize variables by reading from 
+configuration files.
