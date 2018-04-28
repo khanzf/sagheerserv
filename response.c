@@ -89,7 +89,7 @@ void sendserverinfo(struct clientdata_h *clientdata) {
 
 void sendcontenttype(struct clientdata_h *clientdata) {
 	char replyheader[MAXBUF];
-	int len;
+	int len = 0;
 
 	printf("Beginning of sendcontenttype\n");
 
@@ -212,7 +212,7 @@ void send_get_reply_dir(struct clientdata_h *clientdata) {
 }
 
 void send_error_page(struct clientdata_h *clientdata) {
-	int len;
+	int len = 0;
 	char replyheader[MAXBUF];
 	FILE *errorPage;
 

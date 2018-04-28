@@ -170,7 +170,7 @@ int realmain(int argc, char **argv) {
 	int clientsock; // the socket of the clients
 	int rv; // return value checker 
 	int yes = 1; // i won't lie.  have no idea what this does
-	int sin_size; // same deal
+	unsigned int sin_size; // same deal
 
 	struct sockaddr_in myaddr;
 	struct sockaddr_in remoteaddr;
